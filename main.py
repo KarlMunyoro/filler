@@ -1,10 +1,6 @@
-import sys
 from typing import Tuple, List, Type, Set, Optional
-import numpy as np
+import sys
 import solve, boards
-import importlib
-importlib.reload(solve)
-importlib.reload(boards)
 
 Move = str # type alias for a move (really just a string representing a color)
 
@@ -22,7 +18,7 @@ def play(maxdepth: int = 3, seed: Optional[int] = None):
             break
         board = board.add_move(move=move, player=0) # add user move to the board
         solver = solve.Solver(player=1, maxdepth=maxdepth) # instantiate new solver
-        opp_move = solver.choose_move(board=board, depth=0) # choose move for opponent
+        opp_move, _ = solver.choose_move(board=board, depth=0) # choose move for opponent
         board = board.add_move(move=opp_move, player=1) # add opponent move to the board
         board.print_score() 
         board.print_board()
@@ -33,8 +29,9 @@ def play(maxdepth: int = 3, seed: Optional[int] = None):
         print("draw")
     else:
         print("loser :(")
+    play_again(maxdepth=maxdepth, seed=seed)
 
-def get_move(board: boards.Board) -> Optional[Move]:
+def get_move(board: boards.Board) -> Move:
     """Inputs a move from the player and validates the move"""
     potential_moves = board.get_potential_moves(0) # potential moves for the player
     if not bool(potential_moves): # if there aren't any moves to be made, just get legal moves
@@ -47,6 +44,18 @@ def get_move(board: boards.Board) -> Optional[Move]:
             print(f"valid moves: {potential_moves}")
             print("> ", end = "")
     return move 
+
+def play_again(maxdepth: int = 3, seed: Optional[int] = None):
+    """Asks the user to play again and creates a new game if so"""
+    print("play again? (y or n)") # ask user to play again
+    print("> ", end = "")
+    again = ""
+    while again not in ("y", "n"): # prompt until they say yes or no
+        again = input() 
+        if again == "y":
+            play(maxdepth=maxdepth, seed=seed)
+        elif again != "n":
+            return None
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:

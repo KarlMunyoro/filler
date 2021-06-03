@@ -1,7 +1,6 @@
 from typing import Tuple, List, Type, Set, Optional
-import numpy as np
 from copy import deepcopy
-import ipdb
+import numpy as np
 
 Move = str # type alias for a move (really just a string representing a color)
 
@@ -9,14 +8,12 @@ class Board:
     def __init__(self, ncols = 8, nrows = 7):
         self.ncols = ncols
         self.nrows = nrows
-        self.board = list() 
-        self.tiles = {'r','g','y','b','p','w'} # red, green, yellow, blue, purple, and white
-        self.tiles_to_colors = {'r':'🟥','g':'🟩','y':'🟨','b':'🟦','p':'🟪','w':'⬜️'}
-        # self.tiles_to_colors = {'r':'\033[91m','g':'\033[92m','y':'\033[93m','b':'\033[94m','p':'\033[95m','w':'\033[97m'}
-        # self.end_color = '\033[0m'
+        self.board = list() # instantiate the board. Filled in with create_random()
+        self.tiles = {'r','g','y','b','p','w'} # the "tiles", represented by their colors 
+        self.tiles_to_colors = {'r':'🟥','g':'🟩','y':'🟨','b':'🟦','p':'🟪','w':'⬜️'} # for printing the board
 
     def create_random(self, seed: Optional[int] = None):
-        """create a random board"""
+        """Create a random board"""
         # Add colors to the board
         np.random.seed(seed)
         for i in range(self.nrows):
@@ -27,22 +24,20 @@ class Board:
                     forbidden_tiles.add(self.board[-1][j]) # forbid the color of the above tile
                 if j > 0:
                     forbidden_tiles.add(row[-1]) # forbid the color of the leftward tile
-                eligible_tiles = self.tiles - forbidden_tiles
-                row.append(np.random.choice(list(eligible_tiles)))
-            self.board.append(row)
+                eligible_tiles = self.tiles - forbidden_tiles # the rest of the tiles are eligible
+                row.append(np.random.choice(list(eligible_tiles))) # add this color
+            self.board.append(row) # add this row to the board
 
         # Assign corner tiles to players
-        self.player_board = [[None for j in range(self.ncols)] for i in range(self.nrows)]
-        self.player_board[-1][0] = 0
-        self.player_board[0][-1] = 1  
+        self.player_board = [[None for j in range(self.ncols)] for i in range(self.nrows)] # instantiate player board
+        self.player_board[-1][0] = 0 # bottom left is player 0
+        self.player_board[0][-1] = 1 # top right is player 1
 
     def add_move(self, move: str, player: int):
         """Returns a new board with a move made by a given player"""
-        if move is None:
-            return self
         new_board = Board()
-        new_board.board = deepcopy(self.board)
-        new_board.player_board = deepcopy(self.player_board)
+        new_board.board = deepcopy(self.board) # add_move is called for all potential moves. Don't want to affect original board
+        new_board.player_board = deepcopy(self.player_board) # see above
         for i in range(self.nrows):
             for j in range(self.ncols):
                 if new_board.player_board[i][j] == player: # if this tile is controlled by the player
@@ -87,11 +82,13 @@ class Board:
         return False
 
     def get_potential_moves(self, player: int) -> Set[str]: 
-        """Returns the set of potential moves for the given player"""
+        """Returns the set of potential moves for the given player.
+           NOTE: this only includes moves that would add at least 1 tile"""
         potential_moves = set()
         for i in range(self.nrows):
             for j in range(self.ncols):
-                if self.player_board[i][j] == player:
+                if self.player_board[i][j] == player: # if this tile is controlled by the player
+                                                      # add adjacent tiles not already controlled 
                     if i > 0 and self.player_board[i-1][j] is None:
                         potential_moves.add(self.board[i-1][j])
                     if i+1< self.nrows and self.player_board[i+1][j] is None:
@@ -100,13 +97,15 @@ class Board:
                         potential_moves.add(self.board[i][j-1])
                     if j+1 < self.ncols and self.player_board[i][j+1] is None:
                         potential_moves.add(self.board[i][j+1])
-        player_0_tile, player_1_tile = self.get_player_tiles()
+        player_0_tile, player_1_tile = self.get_player_tiles() # subtract tiles the players currently have
         return potential_moves - {player_0_tile, player_1_tile}
 
     def get_legal_moves(self, player: int) -> Set[str]:
-        """Returns moves the player could legally make"""
+        """Returns moves the player could legally make
+           NOTE: this is called if there aren't any 'potential moves'—
+           moves that would add at least 1 tile"""
         player_0_tile, player_1_tile = self.get_player_tiles()
-        return self.tiles - {player_0_tile, player_1_tile}
+        return self.tiles - {player_0_tile, player_1_tile} # return all tiles other than the current ones
 
     def game_over(self) -> bool:
         """Returns whether or not game is over (all player_board positions filled)"""
@@ -121,7 +120,6 @@ class Board:
         for row in self.board:
             for i, tile in enumerate(row):
                 print(f"{self.tiles_to_colors[tile]}", end = "")
-                # print(f" {self.tiles_to_colors[tile]} .{self.end_color}", end = "")
                 if i + 1 < self.ncols:
                     print(" ", end = "")
             print("")
